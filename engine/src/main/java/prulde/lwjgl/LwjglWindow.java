@@ -1,16 +1,8 @@
 package prulde.lwjgl;
 
 import lombok.Getter;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
-import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.*;
 import prulde.core.Config;
-import prulde.core.Injector;
-
-import javax.inject.Inject;
-
-import java.nio.DoubleBuffer;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -18,20 +10,15 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class LwjglWindow {
 	private long window;
-	private final GLFWErrorCallback errorCallback = GLFWErrorCallback.createPrint(System.err).set();
-	private final LwjglKeyInput keyCallback = new LwjglKeyInput();
-	private final LwjglMouseInput mouseButtonCallback = new LwjglMouseInput();
-
-	private final DoubleBuffer mx = BufferUtils.createDoubleBuffer(1);
-	private final DoubleBuffer my = BufferUtils.createDoubleBuffer(1);
 
 	@Getter
 	private float horizontalScaleFactor = 1f;
 
 	@Getter
 	private float verticalScaleFactor = 1f;
+	private final GLFWErrorCallback errorCallback = GLFWErrorCallback.createPrint(System.err).set();
 
-	public void init() {
+	public LwjglWindow() {
 		// Initialize GLFW. Most GLFW functions will not work before doing this.
 		if (!glfwInit())
 			throw new IllegalStateException("Unable to initialize GLFW");
@@ -59,8 +46,7 @@ public class LwjglWindow {
 			throw new RuntimeException("Failed to create the GLFW window");
 		}
 
-		glfwSetKeyCallback(window, keyCallback);
-		glfwSetMouseButtonCallback(window, mouseButtonCallback);
+		// set callback
 		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
 		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -86,7 +72,6 @@ public class LwjglWindow {
 		horizontalScaleFactor = (float) windowWidth[0] / (float) width[0];
 		verticalScaleFactor = (float) windowHeight[0] / (float) height[0];
 
-		//resize(width[0], height[0]);
 		Config.Window.width = width[0];
 		Config.Window.height = height[0];
 	}
@@ -103,6 +88,18 @@ public class LwjglWindow {
 		glfwSwapBuffers(window);
 	}
 
+	public void setKeyCallback(GLFWKeyCallback keyCallback) {
+		glfwSetKeyCallback(window, keyCallback);
+	}
+
+	public void setMouseButtonCallback(GLFWMouseButtonCallback mouseButtonCallback) {
+		glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	}
+
+	public void setCursorPosCallback(GLFWCursorPosCallback cursorPosCallback) {
+		glfwSetCursorPosCallback(window, cursorPosCallback);
+	}
+
 	public void destroy() {
 		// free input callbacks
 		glfwFreeCallbacks(window);
@@ -111,16 +108,6 @@ public class LwjglWindow {
 		// Terminate GLFW and free the error callback
 		glfwTerminate();
 		errorCallback.free();
-	}
-
-	public int getMouseX() {
-		glfwGetCursorPos(window, mx, my);
-		return (int) mx.get(0);
-	}
-
-	public int getMouseY() {
-		glfwGetCursorPos(window, mx, my);
-		return (int) my.get(0);
 	}
 
 	private final GLFWFramebufferSizeCallback framebufferSizeCallback = new GLFWFramebufferSizeCallback() {

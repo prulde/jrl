@@ -20,7 +20,7 @@ import javax.inject.Inject;
 import java.nio.FloatBuffer;
 
 @Log4j2
-public class LwjglRendererOGL implements Renderer {
+public class LwjglFontRenderer implements Renderer {
 	@Inject
 	LwjglWindow window;
 	private final LwjglFontTexture fontTexture = new LwjglFontTexture();
@@ -33,11 +33,9 @@ public class LwjglRendererOGL implements Renderer {
 	private final float[] verts_col = new float[3 * maxTris * 4];
 	private final float[] verts_uv = new float[3 * maxTris * 3];
 
-	public LwjglRendererOGL() {
+	public LwjglFontRenderer() {
 		Injector.getEngineComponent().inject(this);
-	}
 
-	public void init() {
 		GL.createCapabilities();
 		GLUtil.setupDebugMessageCallback();
 
@@ -96,43 +94,26 @@ public class LwjglRendererOGL implements Renderer {
 		STBTTAlignedQuad quad = fontTexture.glyphInfo(glyph);
 		// Adjust the y value so that we move the character down enough to align its baseline
 		y += fontTexture.getAscent() + quad.y0();
-		addQuad(x * (int) Config.Font.cellWidth, y * (int) Config.Font.cellHeight, quad, c);
+		addQuad(x * (int) Config.Font.tileWidth, y * (int) Config.Font.tileHeight, quad, c);
 	}
 
 	// draw centered glyph with background color
 	@Override
-	public void drawCell(int glyph, int x, int y, Color fgc, Color bgc) {
+	public void drawTile(int glyph, int x, int y, Color fgc, Color bgc) {
 		// add step for x and y
-		x *= (int) Config.Font.fontSize;
-		y *= (int) Config.Font.fontSize;
+		x *= (int) Config.Font.tileWidth;
+		y *= (int) Config.Font.tileHeight;
 		// draw background rect
-		drawRect(x, y, (int) Config.Font.fontSize, (int) Config.Font.fontSize, bgc);
+		drawRect(x, y, (int) Config.Font.tileWidth, (int) Config.Font.tileHeight, bgc);
 		STBTTAlignedQuad quad = fontTexture.glyphInfo(glyph);
 		// center glyph
 		float charWidth = quad.x1() - quad.x0();
 		float charHeight = quad.y1() - quad.y0();
-		x += (Config.Font.fontSize / 2) - (charWidth / 2);
-		y += (Config.Font.fontSize / 2) - (charHeight / 2) - ((fontTexture.getAscent() + quad.y0()) / 2); // subtract half the ascent to compensate for centering
+		x += (Config.Font.tileWidth / 2) - (charWidth / 2);
+		y += (Config.Font.tileHeight / 2) - (charHeight / 2) - ((fontTexture.getAscent() + quad.y0()) / 2); // subtract half the ascent to compensate for centering
 		// Adjust the y value so that we move the character down enough to align its baseline
 		y += fontTexture.getAscent() + quad.y0();
 		addQuad(x, y, quad, fgc);
-	}
-
-	// draw centered glyph
-	@Override
-	public void drawCell(int glyph, int x, int y, Color c) {
-		// add step for x and y
-		x *= (int) Config.Font.fontSize;
-		y *= (int) Config.Font.fontSize;
-		STBTTAlignedQuad quad = fontTexture.glyphInfo(glyph);
-		// center glyph
-		float charWidth = quad.x1() - quad.x0();
-		float charHeight = quad.y1() - quad.y0();
-		x += (Config.Font.fontSize / 2) - (charWidth / 2);
-		y += (Config.Font.fontSize / 2) - (charHeight / 2) - ((fontTexture.getAscent() + quad.y0()) / 2); // subtract half the ascent to compensate for centering
-		// Adjust the y value so that we move the character down enough to align its baseline
-		y += fontTexture.getAscent() + quad.y0();
-		addQuad(x, y, quad, c);
 	}
 
 	@Override

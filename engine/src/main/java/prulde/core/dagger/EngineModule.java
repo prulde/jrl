@@ -2,9 +2,12 @@ package prulde.core.dagger;
 
 import dagger.Module;
 import dagger.Provides;
-import prulde.core.Config;
+import prulde.input.KeyboardInput;
+import prulde.input.MouseInput;
+import prulde.lwjgl.LwjglKeyboardInput;
+import prulde.lwjgl.LwjglMouseInput;
 import prulde.render.Renderer;
-import prulde.lwjgl.LwjglRendererOGL;
+import prulde.lwjgl.LwjglFontRenderer;
 import prulde.lwjgl.LwjglWindow;
 
 import javax.inject.Singleton;
@@ -19,7 +22,19 @@ public class EngineModule {
 
 	@Provides
 	@Singleton
+	public static KeyboardInput provideKeyInput() {
+		return new LwjglKeyboardInput();
+	}
+
+	@Provides
+	@Singleton
+	public static MouseInput provideMouseInput() {
+		return new LwjglMouseInput();
+	}
+
+	@Provides
+	@Singleton
 	public static Renderer provideRenderer() {
-		return new LwjglRendererOGL();
+		return new LwjglFontRenderer();
 	}
 }
