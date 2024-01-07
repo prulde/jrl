@@ -6,25 +6,19 @@ import prulde.input.MouseInput;
 import prulde.render.Renderer;
 import prulde.lwjgl.LwjglWindow;
 
-import javax.inject.Inject;
 
 @Log4j2
 public abstract class Game {
-	@Inject
-	LwjglWindow window;
-	@Inject
-	protected Renderer renderer;
-	@Inject
-	protected MouseInput mouseInput;
-	@Inject
-	protected KeyboardInput keyboardInput;
+	private final LwjglWindow window = Injector.provideWindow();
+	protected final Renderer renderer = Injector.provideRenderer();
+	protected final MouseInput mouseInput = Injector.provideMouseInput();
+	protected final KeyboardInput keyboardInput = Injector.provideKeyInput();
 
 	private long timer = System.currentTimeMillis();
 	private int updates = 0;
 	private int frames = 0;
 
 	public Game() {
-		Injector.getEngineComponent().inject(this);
 		create();
 		loop();
 	}
@@ -51,7 +45,7 @@ public abstract class Game {
 			renderer.render();
 			window.pollEvents();
 			frames++;
-			
+
 			if (Config.logPerformance)
 				logPerformance();
 		}

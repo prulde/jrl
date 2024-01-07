@@ -10,6 +10,7 @@ import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTruetype;
 import org.lwjgl.system.MemoryStack;
 import prulde.core.Config;
+import prulde.util.FileUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,7 +24,7 @@ import static org.lwjgl.stb.STBTruetype.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 @Log4j2
-public class LwjglFontTexture {
+public final class LwjglFontTexture {
 	// These numbers are somewhat arbitrary.  They should work for a 16 point font
 	// with less than 1000 glyphs.  If you are using larger or more populated fonts
 	// you may need to make more room in the bitmap for them.
@@ -42,15 +43,12 @@ public class LwjglFontTexture {
 	private int descent;
 	@Getter
 	private int lineGap;
-
+	@Getter
 	private int textureId;
 
 	// These will be filled with the most recently looked up glyph's width and height, in pixels
 	private final float[] glyphWidth = new float[1];
 	private final float[] glyphHeight = new float[1];
-
-	@Getter
-	private final SolidColorData solidColorData = new SolidColorData();
 
 	// This buffer holds the info for each glyph in the font
 	private final STBTTBakedChar.Buffer glyphData = STBTTBakedChar.malloc(numberOfGlyphs);
@@ -65,23 +63,21 @@ public class LwjglFontTexture {
 		return alignedQuad.get(0);
 	}
 
-	public void loadFromTTF() {
+	public void loadFromTTF(String path) {
 		ByteBuffer ttfData;
 		try {
-			ttfData = readFile(Config.Font.fontPath);
+			ttfData = FileUtils.readFile(path);
 		} catch (IOException e) {
-			throw new RuntimeException("Can't load font resource at path " + Config.Font.fontPath, e);
+			throw new RuntimeException("Can't load font resource at path " + path, e);
 		}
 		generateTexture(ttfData);
-		log.info("Loaded font: " + Config.Font.fontPath);
+		log.info("Loaded font: " + path);
 	}
 
 	private void generateTexture(ByteBuffer ttfData) {
 		readFontInfo(ttfData);
 		ByteBuffer fontBitmap = BufferUtils.createByteBuffer(bitmapWidth * bitmapHeight);
 		STBTruetype.stbtt_BakeFontBitmap(ttfData, Config.Font.fontSize, fontBitmap, bitmapWidth, bitmapHeight, 32, glyphData);
-		// Add a white pixel in the bottom right corner of our bitmap to use as the texture for drawRect
-		fontBitmap.put(bitmapWidth * bitmapHeight - 1, (byte) 0xFF);
 
 		// can free the ttfData now
 		textureId = glGenTextures();
@@ -92,16 +88,6 @@ public class LwjglFontTexture {
 		stbtt_FreeBitmap(fontBitmap);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	}
-
-	private ByteBuffer readFile(String filePath) throws IOException {
-		File file = new File(Config.getFilePath(filePath));
-		InputStream is = new FileInputStream(file);
-		byte[] bytes = IOUtils.toByteArray(is);
-		ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length + 1);
-		buffer.put(bytes);
-		buffer.flip();
-		return buffer;
 	}
 
 	private void readFontInfo(ByteBuffer ttfData) {
@@ -125,17 +111,6 @@ public class LwjglFontTexture {
 			ascent *= scaleFactor;
 			descent *= scaleFactor;
 			lineGap *= scaleFactor;
-		}
-	}
-
-	public class SolidColorData {
-		float u, v, uw, vh;
-
-		public SolidColorData() {
-			u = (float) (bitmapWidth - 1) / (float) bitmapWidth;
-			v = (float) (bitmapHeight - 1) / (float) bitmapHeight;
-			uw = 1f - u;
-			vh = 1f - v;
 		}
 	}
 }

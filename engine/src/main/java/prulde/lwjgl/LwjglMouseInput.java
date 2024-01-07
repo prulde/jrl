@@ -7,21 +7,17 @@ import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import prulde.core.Injector;
 import prulde.input.MouseInput;
 
-import javax.inject.Inject;
-
 import java.nio.DoubleBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 @Log4j2
 public class LwjglMouseInput implements MouseInput {
-	@Inject
-	LwjglWindow window;
+	private final LwjglWindow window = Injector.provideWindow();
 	private double mx = 0;
 	private double my = 0;
 
 	public LwjglMouseInput() {
-		Injector.getEngineComponent().inject(this);
 		// set callbacks
 		window.setMouseButtonCallback(mouseButtonCallback);
 		window.setCursorPosCallback(cursorPosCallback);

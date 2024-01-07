@@ -7,22 +7,18 @@ import prulde.input.Input;
 import prulde.input.KeyboardInputState;
 import prulde.input.KeyboardInput;
 
-import javax.inject.Inject;
-
-import java.util.concurrent.LinkedBlockingQueue;
-
 import static org.lwjgl.glfw.GLFW.*;
 
 @Log4j2
 public class LwjglKeyboardInput implements KeyboardInput {
-	@Inject
-	LwjglWindow window;
+	private final LwjglWindow window = Injector.provideWindow();
 	private final boolean[] keys = new boolean[65536];
-	private final LinkedBlockingQueue<KeyboardInputState> buffer = new LinkedBlockingQueue<>();
-	private int bufferSize = 2;
+
+	// instead of allocating new objects for the buffer
+	private KeyboardInputState dummy = new KeyboardInputState(false, false, false, Input.Keys.NO_INPUT);
+	private KeyboardInputState state = new KeyboardInputState(false, false, false, Input.Keys.NO_INPUT);
 
 	public LwjglKeyboardInput() {
-		Injector.getEngineComponent().inject(this);
 		// set callback
 		window.setKeyCallback(keyCallback);
 	}
@@ -33,25 +29,22 @@ public class LwjglKeyboardInput implements KeyboardInput {
 			if (key < 0 || key >= keys.length) return;
 			keys[key] = action != GLFW_RELEASE;
 			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				keyPressed(new KeyboardInputState(keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT],
-						keys[GLFW_KEY_LEFT_CONTROL] || keys[GLFW_KEY_RIGHT_CONTROL],
-						keys[GLFW_KEY_LEFT_ALT] || keys[GLFW_KEY_RIGHT_ALT],
-						getKeyCode(key)));
+				state.setKey(getKeyCode(key));
+				state.setShiftDown(keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]);
+				state.setCtrlDown(keys[GLFW_KEY_LEFT_CONTROL] || keys[GLFW_KEY_RIGHT_CONTROL]);
+				state.setAltDown(keys[GLFW_KEY_LEFT_ALT] || keys[GLFW_KEY_RIGHT_ALT]);
 			}
 		}
 	};
 
 	@Override
 	public KeyboardInputState getState() {
-		if (!buffer.isEmpty())
-			return buffer.remove();
-		return new KeyboardInputState(false, false, false, Input.Keys.NO_INPUT);
-	}
-
-	private void keyPressed(KeyboardInputState k) {
-		if (buffer.size() < bufferSize) {
-			buffer.add(k);
-		}
+		dummy.setKey(state.getKey());
+		dummy.setShiftDown(state.isShiftDown());
+		dummy.setCtrlDown(state.isCtrlDown());
+		dummy.setAltDown(state.isAltDown());
+		state.reset();
+		return dummy;
 	}
 
 	private int getKeyCode(int k) {
